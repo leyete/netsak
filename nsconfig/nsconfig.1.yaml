@@ -1,0 +1,5 @@
+server:
+    url: http://localhost
+    port: 8001
+    user:
+    password: toor
