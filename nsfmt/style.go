@@ -6,7 +6,6 @@ package nsfmt
 
 import (
 	"bytes"
-	"io"
 )
 
 // ColorMode identifies different color output modes.
@@ -47,10 +46,10 @@ var attrs = map[Style][]byte{
 func (s Style) ANSI(mode ColorMode) string {
 	var b bytes.Buffer
 
-	b.Write([]byte{'\x1b', '['})
+	b.WriteString("\x1b;")
 
 	if s&AttrReset != 0 {
-		b.Write([]byte{'0', 'm'})
+		b.WriteString("0m")
 		return b.String()
 	}
 
@@ -282,8 +281,8 @@ const (
 
 // doAnsiColor returns a byte slice containing the sequence to express the
 // supplied rgb color in the proper format according to the specified color mode.
-func doAnsiColor(mode ColorMode, fgbg int, w io.Writer, rgb int) {
-	b := make([]byte, 15)[:0]
+func doAnsiColor(mode ColorMode, fgbg int, b *bytes.Buffer, rgb int) {
+	// b := make([]byte, 15)[:0]
 
 	switch mode {
 	case ColorMode4Bit:
@@ -291,19 +290,20 @@ func doAnsiColor(mode ColorMode, fgbg int, w io.Writer, rgb int) {
 		if n > 7 {
 			n = n - 8 + 60
 		}
-		b = append(append(b, Itoa(fgbg-8+n, 0)...), ';')
+		b.Write(Itoa(fgbg-8+n, 0))
+		b.WriteByte(';')
 	case ColorMode8Bit:
 		n := RgbTo8Bit((rgb>>16)&0xff, (rgb>>8)&0xff, (rgb & 0xff))
-		b = append(b, Itoa(fgbg, 0)...)
-		b = append(b, ';', '5', ';')
-		b = append(append(b, Itoa(n, 0)...), ';')
+		// b.WriteString(string(Itoa(fgbg, 0)) + ";5;" + string(Itoa(n, 0)) + ";")
+		b.Write(Itoa(fgbg, 0))
+		b.WriteString(";5;")
+		b.Write(Itoa(n, 0))
+		b.WriteByte(';')
 	case ColorMode24Bit:
-		b = append(b, Itoa(fgbg, 0)...)
-		b = append(b, ';', '2', ';')
-		b = append(append(b, Itoa((rgb>>16)&0xff, 0)...), ';')
-		b = append(append(b, Itoa((rgb>>8)&0xff, 0)...), ';')
-		b = append(append(b, Itoa(rgb&0xff, 0)...), ';')
+		// b = append(b, Itoa(fgbg, 0)...)
+		// b = append(b, ';', '2', ';')
+		// b = append(append(b, Itoa((rgb>>16)&0xff, 0)...), ';')
+		// b = append(append(b, Itoa((rgb>>8)&0xff, 0)...), ';')
+		// b = append(append(b, Itoa(rgb&0xff, 0)...), ';')
 	}
-
-	w.Write(b)
 }
